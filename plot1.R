@@ -1,15 +1,26 @@
-#Have total emissions from PM2.5 decreased in the United States from 1999 to 2008? Using the base plotting system, make a plot showing the total PM2.5 emission from all sources for each of the years 1999, 2002, 2005, and 2008.
+library("data.table")
+library("ggplot2")
 
-# Prevents histogram from printing in scientific notation
-NEI[, Emissions := lapply(.SD, as.numeric), .SDcols = c("Emissions")]
+setwd("~/Desktop/datasciencecoursera/4_Exploratory_Data_Analysis/project2")
+path <- getwd()
+download.file(url = "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2FNEI_data.zip"
+              , destfile = paste(path, "dataFiles.zip", sep = "/"))
+unzip(zipfile = "dataFiles.zip")
 
-totalNEI <- NEI[, lapply(.SD, sum, na.rm = TRUE), .SDcols = c("Emissions"), by = year]
+# Load the NEI & SCC data frames.
+NEI <- data.table::as.data.table(x = readRDS("summarySCC_PM25.rds"))
+SCC <- data.table::as.data.table(x = readRDS("Source_Classification_Code.rds"))
 
-png(filename='plot1.png')
+# Subset NEI data by Baltimore
+baltimoreNEI <- NEI[fips=="24510",]
 
-barplot(totalNEI[, Emissions]
-        , names = totalNEI[, year]
-        , xlab = "Years", ylab = "Emissions"
-        , main = "Emissions over the Years")
+png("plot3.png")
+
+ggplot(baltimoreNEI,aes(factor(year),Emissions,fill=type)) +
+  geom_bar(stat="identity") +
+  theme_bw() + guides(fill=FALSE)+
+  facet_grid(.~type,scales = "free",space="free") + 
+  labs(x="year", y=expression("Total PM"[2.5]*" Emission (Tons)")) + 
+  labs(title=expression("PM"[2.5]*" Emissions, Baltimore City 1999-2008 by Source Type"))
 
 dev.off()
